@@ -11,12 +11,12 @@ import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
 import org.apache.commons.io.FileUtils;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.*;
+import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -25,7 +25,7 @@ import java.io.InputStream;
 import java.util.*;
 
 @Controller
-@RequestMapping("/testAction")
+//@RequestMapping("/testAction")
 public class TestAction {
 
     @Autowired
@@ -33,7 +33,7 @@ public class TestAction {
     @Autowired
     ObjectMapper objectMapper;
 
-    @GetMapping("/test")
+    @RequestMapping("/test")
     @ResponseBody
     public  String  test(){
         return "sfsdfsdf";
@@ -47,6 +47,62 @@ public class TestAction {
         return "hello";
     }
 
+
+
+
+    /**
+     * 登陆通过安全框架
+     * @param username
+     * @param password
+     * @return
+     */
+    @RequestMapping(value = "/login", method = RequestMethod.POST)
+    @ResponseBody
+    public String login(@RequestParam("username") String username, @RequestParam("password") String password) {
+        // 从SecurityUtils里边创建一个 subject
+        Subject subject = SecurityUtils.getSubject();
+        // 在认证提交前准备 token（令牌）
+        UsernamePasswordToken token = new UsernamePasswordToken(username, password);
+        // 执行认证登陆
+        try {
+            subject.login(token);
+        } catch (UnknownAccountException uae) {
+            return "未知账户";
+        } catch (IncorrectCredentialsException ice) {
+            return "密码不正确";
+        } catch (LockedAccountException lae) {
+            return "账户已锁定";
+        } catch (ExcessiveAttemptsException eae) {
+            return "用户名或密码错误次数过多";
+        } catch (AuthenticationException ae) {
+            return "用户名或密码不正确！";
+        }
+        if (subject.isAuthenticated()) {
+            return "登录成功";
+        } else {
+            token.clear();
+            return "登录失败";
+        }
+    }
+
+
+    /**
+     * 没有登陆跳转
+     * @return
+     */
+    @RequestMapping(value = "/login", method = RequestMethod.GET)
+    public String unLogin() {
+        return "login";
+    }
+
+    /**
+     * 没有权限跳转
+     * @return
+     */
+    @RequestMapping(value = "/noRole", method = RequestMethod.GET)
+    public String noRole() {
+        return "noRole";
+    }
 
 
 
