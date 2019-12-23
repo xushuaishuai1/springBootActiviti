@@ -63,7 +63,7 @@ public class ShiroConfig {
         // 设置默认登录的 URL，身份认证失败会访问该 URL
         shiroFilterFactoryBean.setLoginUrl("/login");
         // 设置未授权界面，权限认证失败会访问该 URL
-        shiroFilterFactoryBean.setUnauthorizedUrl("/notRole");
+        shiroFilterFactoryBean.setUnauthorizedUrl("/noRole");
 
         Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
         // anon 表示放行
@@ -78,7 +78,7 @@ public class ShiroConfig {
 
         // authc 表示要进行身份认证
         // 以“/user/admin” 开头的用户需要身份认证，authc 表示要进行身份认证
-        filterChainDefinitionMap.put("/user/**", "authc");
+        filterChainDefinitionMap.put("/user/**", "perms[\"user:xx\"]");
         // “/user/student” 开头的用户需要角色认证，是“admin”才允许
         filterChainDefinitionMap.put("/user/student*/**", "roles[admin]");
         // “/user/teacher” 开头的用户需要权限认证，是“user:create”才允许
