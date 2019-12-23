@@ -56,6 +56,7 @@ public class ShiroConfig {
      */
     @Bean(name = "shiroFilter")
     public ShiroFilterFactoryBean shiroFilter(SecurityManager securityManager) {
+
         // 定义 shiroFactoryBean
         ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
         // 设置自定义的 securityManager
