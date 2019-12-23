@@ -19,6 +19,7 @@ public class CustomRealm extends AuthorizingRealm {
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principalCollection) {
         String username = (String) SecurityUtils.getSubject().getPrincipal();
         SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
+        //这里权限应该从数据库获取
         Set<String> stringSet = new HashSet<>();
         stringSet.add("user:show");
         stringSet.add("user:admin");
