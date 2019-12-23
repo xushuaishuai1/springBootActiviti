@@ -3,8 +3,10 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.*;
 import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.authz.SimpleAuthorizationInfo;
+import org.apache.shiro.crypto.hash.SimpleHash;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.util.ByteSource;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -39,13 +41,26 @@ public class CustomRealm extends AuthorizingRealm {
         System.out.println("-------身份认证方法--------");
         String userName = (String) authenticationToken.getPrincipal();
         String userPwd = new String((char[]) authenticationToken.getCredentials());
+        userPwd = MD5Pwd(userName,userPwd);
         //根据用户名从数据库获取密码
-        String password = "123";
+        String password = "2415b95d3203ac901e287b76fcef640b";//123
         if (userName == null) {
             throw new AccountException("用户名不正确");
         } else if (!userPwd.equals(password )) {
             throw new AccountException("密码不正确");
         }
-        return new SimpleAuthenticationInfo(userName, password,getName());
+        //交给AuthenticatingRealm使用CredentialsMatcher进行密码匹配
+        return new SimpleAuthenticationInfo(userName, password, ByteSource.Util.bytes(userName + "salt"), getName());
+//        return new SimpleAuthenticationInfo(userName, password,getName());
     }
+
+    public static String MD5Pwd(String username, String pwd) {
+        // 加密算法MD5
+        // salt盐 username + salt
+        // 迭代次数
+        String md5Pwd = new SimpleHash("MD5", pwd,
+                ByteSource.Util.bytes(username + "salt"), 2).toHex();
+        return md5Pwd;
+    }
+
 }
