@@ -15,42 +15,11 @@ import java.util.Map;
 
 @Configuration
 public class ShiroConfig {
-    @Bean(name = "shiroFilter")
-    public ShiroFilterFactoryBean shiroFilter(SecurityManager securityManager) {
-        ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
-        shiroFilterFactoryBean.setSecurityManager(securityManager);
-        shiroFilterFactoryBean.setLoginUrl("/login");
-        shiroFilterFactoryBean.setUnauthorizedUrl("/notRole");
-        Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
-        // <!-- authc:所有url都必须认证通过才可以访问; anon:所有url都都可以匿名访问-->
-        filterChainDefinitionMap.put("/webjars/**", "anon");
-        filterChainDefinitionMap.put("/login", "anon");
-        filterChainDefinitionMap.put("/", "anon");
-        filterChainDefinitionMap.put("/front/**", "anon");
-        filterChainDefinitionMap.put("/api/**", "anon");
 
-        filterChainDefinitionMap.put("/admin/**", "authc");
-        filterChainDefinitionMap.put("/user/**", "authc");
-        //主要这行代码必须放在所有权限设置的最后，不然会导致所有 url 都被拦截 剩余的都需要认证
-        filterChainDefinitionMap.put("/**", "authc");
-        shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
-        return shiroFilterFactoryBean;
-
-    }
-
-    @Bean
-    public SecurityManager securityManager() {
-        DefaultWebSecurityManager defaultSecurityManager = new DefaultWebSecurityManager();
-        defaultSecurityManager.setRealm(customRealm());
-        return defaultSecurityManager;
-    }
-
-//    @Bean
-//    public CustomRealm customRealm() {
-//        CustomRealm customRealm = new CustomRealm();
-//        return customRealm;
-//    }
-
+    /**
+     * 注入自定义的 Realm
+     * @return
+     */
     @Bean
     public CustomRealm customRealm() {
         CustomRealm customRealm = new CustomRealm();
@@ -59,6 +28,78 @@ public class ShiroConfig {
         customRealm.setCachingEnabled(false);
         return customRealm;
     }
+
+
+//    @Bean
+//    public CustomRealm customRealm() {
+//        CustomRealm customRealm = new CustomRealm();
+//        return customRealm;
+//    }
+
+
+    /**
+     * 注入安全管理器
+     * @return
+     */
+    @Bean
+    public SecurityManager securityManager() {
+        DefaultWebSecurityManager defaultSecurityManager = new DefaultWebSecurityManager();
+        defaultSecurityManager.setRealm(customRealm());
+        return defaultSecurityManager;
+    }
+
+
+    /**
+     * 注入 Shiro 过滤器
+     * @param securityManager
+     * @return
+     */
+    @Bean(name = "shiroFilter")
+    public ShiroFilterFactoryBean shiroFilter(SecurityManager securityManager) {
+        // 定义 shiroFactoryBean
+        ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
+        // 设置自定义的 securityManager
+        shiroFilterFactoryBean.setSecurityManager(securityManager);
+        // 设置默认登录的 URL，身份认证失败会访问该 URL
+        shiroFilterFactoryBean.setLoginUrl("/login");
+        // 设置未授权界面，权限认证失败会访问该 URL
+        shiroFilterFactoryBean.setUnauthorizedUrl("/notRole");
+
+        Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
+        // anon 表示放行
+        filterChainDefinitionMap.put("/css/**", "anon");
+        filterChainDefinitionMap.put("/imgs/**", "anon");
+        filterChainDefinitionMap.put("/js/**", "anon");
+        filterChainDefinitionMap.put("/swagger-*/**", "anon");
+        filterChainDefinitionMap.put("/swagger-ui.html/**", "anon");
+        filterChainDefinitionMap.put("/login", "anon");
+
+
+
+        // authc 表示要进行身份认证
+        // 以“/user/admin” 开头的用户需要身份认证，authc 表示要进行身份认证
+        filterChainDefinitionMap.put("/user/**", "authc");
+        // “/user/student” 开头的用户需要角色认证，是“admin”才允许
+        filterChainDefinitionMap.put("/user/student*/**", "roles[admin]");
+        // “/user/teacher” 开头的用户需要权限认证，是“user:create”才允许
+        filterChainDefinitionMap.put("/user/teacher*/**", "perms[\"user:create\"]");
+
+        // 配置 logout 过滤器
+        filterChainDefinitionMap.put("/logout", "logout");
+
+        //主要这行代码必须放在所有权限设置的最后，不然会导致所有 url 都被拦截 剩余的都需要认证
+        filterChainDefinitionMap.put("/**", "authc");
+
+        // 设置 shiroFilterFactoryBean 的 FilterChainDefinitionMap
+        shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
+        return shiroFilterFactoryBean;
+
+    }
+
+
+
+
+
 
 
 

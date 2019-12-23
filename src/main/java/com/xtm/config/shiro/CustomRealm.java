@@ -19,14 +19,18 @@ public class CustomRealm extends AuthorizingRealm {
      */
     @Override
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principalCollection) {
-        String username = (String) SecurityUtils.getSubject().getPrincipal();
-        SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();
+//        String username = (String) SecurityUtils.getSubject().getPrincipal();
+        String username = (String) principalCollection.getPrimaryPrincipal();
+        SimpleAuthorizationInfo simpleAuthorizationInfo = new SimpleAuthorizationInfo();
         //这里权限应该从数据库获取
         Set<String> stringSet = new HashSet<>();
         stringSet.add("user:show");
         stringSet.add("user:admin");
-        info.setStringPermissions(stringSet);
-        return info;
+        //设置用户角色,这里不区分，正式开发需要区分
+        simpleAuthorizationInfo.setRoles(stringSet);
+        //设置访问路径权限
+        simpleAuthorizationInfo.setStringPermissions(stringSet);
+        return simpleAuthorizationInfo;
     }
 
     /**
@@ -49,6 +53,8 @@ public class CustomRealm extends AuthorizingRealm {
         } else if (!userPwd.equals(password )) {
             throw new AccountException("密码不正确");
         }
+        // 把当前用户存到 Session 中
+//        SecurityUtils.getSubject().getSession().setAttribute("user", user);
         //交给AuthenticatingRealm使用CredentialsMatcher进行密码匹配
         return new SimpleAuthenticationInfo(userName, password, ByteSource.Util.bytes(userName + "salt"), getName());
 //        return new SimpleAuthenticationInfo(userName, password,getName());
