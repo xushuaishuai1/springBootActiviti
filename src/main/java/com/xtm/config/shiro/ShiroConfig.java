@@ -4,6 +4,8 @@ import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.spring.LifecycleBeanPostProcessor;
 import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
+import org.apache.shiro.spring.web.config.DefaultShiroFilterChainDefinition;
+import org.apache.shiro.spring.web.config.ShiroFilterChainDefinition;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
 import org.springframework.context.annotation.Bean;
@@ -42,7 +44,7 @@ public class ShiroConfig {
      * @return
      */
     @Bean
-    public SecurityManager securityManager() {
+    DefaultWebSecurityManager securityManager() {
         DefaultWebSecurityManager defaultSecurityManager = new DefaultWebSecurityManager();
         defaultSecurityManager.setRealm(customRealm());
         return defaultSecurityManager;
@@ -55,16 +57,16 @@ public class ShiroConfig {
      * @return
      */
     @Bean(name = "shiroFilter")
-    public ShiroFilterFactoryBean shiroFilter(SecurityManager securityManager) {
+    ShiroFilterChainDefinition shiroFilter(SecurityManager securityManager) {
 
         // 定义 shiroFactoryBean
-        ShiroFilterFactoryBean shiroFilterFactoryBean = new ShiroFilterFactoryBean();
+        DefaultShiroFilterChainDefinition shiroFilterFactoryBean = new DefaultShiroFilterChainDefinition();
         // 设置自定义的 securityManager
-        shiroFilterFactoryBean.setSecurityManager(securityManager);
+//        shiroFilterFactoryBean.setSecurityManager(securityManager);
         // 设置默认登录的 URL，身份认证失败会访问该 URL
-        shiroFilterFactoryBean.setLoginUrl("/login");
+//        shiroFilterFactoryBean.setLoginUrl("/login");
         // 设置未授权界面，权限认证失败会访问该 URL
-        shiroFilterFactoryBean.setUnauthorizedUrl("/noRole");
+//        shiroFilterFactoryBean.setUnauthorizedUrl("/noRole");
 
         Map<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
         // anon 表示放行
@@ -79,7 +81,9 @@ public class ShiroConfig {
 
         // authc 表示要进行身份认证
         // 以“/user/admin” 开头的用户需要身份认证，authc 表示要进行身份认证
-        filterChainDefinitionMap.put("/user/**", "perms[\"user:xx\"]");
+//        filterChainDefinitionMap.put("/user/**", "perms[\"user:xx\"]");
+        filterChainDefinitionMap.put("/user/show", "perms[\"user:show\"]");
+        filterChainDefinitionMap.put("/user/show1", "perms[\"user:xx\"]");
         // “/user/student” 开头的用户需要角色认证，是“admin”才允许
         filterChainDefinitionMap.put("/user/student*/**", "roles[admin]");
         // “/user/teacher” 开头的用户需要权限认证，是“user:create”才允许
@@ -92,7 +96,7 @@ public class ShiroConfig {
         filterChainDefinitionMap.put("/**", "authc");
 
         // 设置 shiroFilterFactoryBean 的 FilterChainDefinitionMap
-        shiroFilterFactoryBean.setFilterChainDefinitionMap(filterChainDefinitionMap);
+        shiroFilterFactoryBean.addPathDefinitions(filterChainDefinitionMap);
         return shiroFilterFactoryBean;
 
     }
