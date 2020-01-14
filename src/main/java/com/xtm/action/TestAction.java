@@ -1,6 +1,7 @@
 package com.xtm.action;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.xtm.util.BlockChain;
 import org.activiti.engine.ProcessEngine;
 import org.activiti.engine.TaskService;
 import org.activiti.engine.history.HistoricProcessInstance;
@@ -37,6 +38,72 @@ public class TestAction {
     @ResponseBody
     public  String  test(){
         return "sfsdfsdf";
+    }
+
+
+
+    /**
+     * 创建一个交易并添加到区块
+     * @return
+     */
+    @RequestMapping("/transactions/new")
+    @ResponseBody
+    public  String  transactions_new(HttpServletRequest request){
+//        {
+//            "sender": "my address",
+//            "recipient": "someone else's address",
+//            "amount": 5
+//        }
+        String sender = request.getParameter("sender");
+        String recipient = request.getParameter("recipient");
+        Long amount = new Long(request.getParameter("amount"));
+        // 新建交易信息
+        BlockChain blockChain = BlockChain.getInstance();
+        int index = blockChain.newTransactions(sender,recipient,amount);
+        return index+"";
+    }
+
+    /**
+     * 告诉服务器去挖掘新的区块
+     * @return
+     */
+    @RequestMapping("/mine")
+    @ResponseBody
+    public  String  mine(HttpServletRequest request){
+        BlockChain blockChain = BlockChain.getInstance();
+        Map<String, Object> lastBlock = blockChain.lastBlock();
+        long lastProof = Long.parseLong(lastBlock.get("proof") + "");
+        long proof = blockChain.proofOfWork(lastProof);
+
+        // 给工作量证明的节点提供奖励，发送者为 "0" 表明是新挖出的币
+        blockChain.newTransactions("0", "13123", 1);
+
+        // 构建新的区块
+        Map<String, Object> newBlock = blockChain.newBlock(proof, null);
+        Map<String, Object> response = new HashMap<String, Object>();
+        response.put("message", "New Block Forged");
+        response.put("index", newBlock.get("index"));
+        response.put("transactions", newBlock.get("transactions"));
+        response.put("proof", newBlock.get("proof"));
+        response.put("previous_hash", newBlock.get("previous_hash"));
+
+        return response.toString();
+
+    }
+
+
+    /**
+     * 返回整个区块链
+     * @return
+     */
+    @RequestMapping("/chain")
+    @ResponseBody
+    public  String  chain(){
+        BlockChain blockChain = BlockChain.getInstance();
+        Map<String, Object> response = new HashMap<String, Object>();
+        response.put("chain", blockChain.getChain());
+        response.put("length", blockChain.getChain().size());
+        return response.toString();
     }
 
 
