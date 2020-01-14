@@ -76,6 +76,7 @@ public class ShiroConfig {
         filterChainDefinitionMap.put("/swagger-*/**", "anon");
         filterChainDefinitionMap.put("/swagger-ui.html/**", "anon");
         filterChainDefinitionMap.put("/login", "anon");
+        filterChainDefinitionMap.put("/chain", "anon");
 
 
 

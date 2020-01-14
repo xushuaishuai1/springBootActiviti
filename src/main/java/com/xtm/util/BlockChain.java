@@ -1,8 +1,23 @@
 package com.xtm.util;
 
 import com.alibaba.fastjson.JSONObject;
+import org.springframework.http.RequestEntity;
 
+import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.httpclient.params.HttpMethodParams;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.util.Date;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -103,20 +118,19 @@ public class BlockChain {
      * @return 如果链被取代返回true, 否则返回false
      * @throws IOException
      */
-//    public boolean resolveConflicts() throws Exception {
-//        Set<String> neighbours = this.nodes;
-//        List<Map<String, Object>> newChain = null;
-//
-//        // 寻找最长的区块链
-//        long maxLength = this.chain.size();
-//
-//        // 获取并验证网络中的所有节点的区块链
-//        for (String node : neighbours) {
-//
-//            URL url = new URL("http://" + node + "/BlockChain_Java/chain");
+    public boolean resolveConflicts() throws Exception {
+        Set<String> neighbours = this.nodes;
+        List<Map<String, Object>> newChain = null;
+
+        // 寻找最长的区块链
+        long maxLength = this.chain.size();
+
+        // 获取并验证网络中的所有节点的区块链
+        for (String node : neighbours) {
+
+//            URL url = new URL("http://" + node + "/chain");
 //            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 //            connection.connect();
-//
 //            if (connection.getResponseCode() == 200) {
 //                BufferedReader bufferedReader = new BufferedReader(
 //                        new InputStreamReader(connection.getInputStream(), "utf-8"));
@@ -127,9 +141,11 @@ public class BlockChain {
 //                }
 //                bufferedReader.close();
 //
-//                JSONObject jsonData = new JSONObject(bufferedReader.toString());
+//                System.out.println(bufferedReader.toString());
+//                JSONObject jsonData = JSONObject.parseObject(bufferedReader.toString());
 //                long length = jsonData.getLong("length");
-//                List<Map<String, Object>> chain = (List) jsonData.getJSONArray("chain").toList();
+//                List<Map<String, Object>> chain = (List)jsonData.getJSONArray("chain");
+////                List<Map<String, Object>> chain = (List) jsonData.getJSONArray("chain").toList();
 //
 //                // 检查长度是否长，链是否有效
 //                if (length > maxLength && validChain(chain)) {
@@ -137,15 +153,28 @@ public class BlockChain {
 //                    newChain = chain;
 //                }
 //            }
-//
-//        }
-//        // 如果发现一个新的有效链比我们的长，就替换当前的链
-//        if (newChain != null) {
-//            this.chain = newChain;
-//            return true;
-//        }
-//        return false;
-//    }
+
+            String result = doPost("http://" + node + "/chain","");
+            System.out.println("http://" + node + "/chain");
+            System.out.println("result="+result);
+            JSONObject jsonData = JSONObject.parseObject(result);
+            long length = jsonData.getLong("length");
+            List<Map<String, Object>> chain = (List)jsonData.getJSONArray("chain");
+
+            // 检查长度是否长，链是否有效
+            if (length > maxLength && validChain(chain)) {
+                maxLength = length;
+                newChain = chain;
+            }
+
+        }
+        // 如果发现一个新的有效链比我们的长，就替换当前的链
+        if (newChain != null) {
+            this.chain = newChain;
+            return true;
+        }
+        return false;
+    }
 
     /**
      * @return 得到区块链中的最后一个区块
@@ -245,6 +274,43 @@ public class BlockChain {
         String guess = last_proof + "" + proof;
         String guess_hash = new Encrypt().getSHA256(guess);
         return guess_hash.startsWith("0000");
+    }
+
+
+    /**
+     * 调用post方法
+     * @param url
+     * @param data
+     * @return
+     */
+    public static String doPost(String url,String data) {
+        // 获取输入流
+        InputStream is = null;
+        BufferedReader br = null;
+        String result = null;
+        // 创建httpClient实例对象
+        HttpClient httpClient = new HttpClient();
+        // 设置httpClient连接主机服务器超时时间：15000毫秒
+        httpClient.getHttpConnectionManager().getParams().setConnectionTimeout(15000);
+        // 创建post请求方法实例对象
+        PostMethod postMethod = new PostMethod(url);
+        try {
+            StringRequestEntity se = new StringRequestEntity(data, "application/json", "UTF-8");
+            postMethod.setRequestEntity(se);
+            postMethod.setRequestHeader("Content-Type", "application/json");
+            //默认的重试策略
+            postMethod.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler());
+            postMethod.getParams().setParameter(HttpMethodParams.SO_TIMEOUT, 5000);//设置超时时间
+            //设置请求的编码
+            postMethod.getParams().setParameter(HttpMethodParams.HTTP_CONTENT_CHARSET, "utf-8");
+            httpClient.executeMethod(postMethod);
+            result = postMethod.getResponseBodyAsString();
+
+        }catch (Exception e){
+            e.fillInStackTrace();
+        }
+
+        return result;
     }
 
 }

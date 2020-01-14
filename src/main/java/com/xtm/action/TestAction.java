@@ -1,5 +1,6 @@
 package com.xtm.action;
 
+import com.alibaba.fastjson.JSONArray;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xtm.util.BlockChain;
 import org.activiti.engine.ProcessEngine;
@@ -45,6 +46,7 @@ public class TestAction {
     }
 
 
+    //https://blog.51cto.com/zero01/2086195
 
     /**
      * 创建一个交易并添加到区块
@@ -73,7 +75,7 @@ public class TestAction {
      */
     @RequestMapping("/mine")
     @ResponseBody
-    public  String  mine(HttpServletRequest request){
+    public  Object  mine(HttpServletRequest request){
         BlockChain blockChain = BlockChain.getInstance();
         Map<String, Object> lastBlock = blockChain.lastBlock();
         long lastProof = Long.parseLong(lastBlock.get("proof") + "");
@@ -92,7 +94,7 @@ public class TestAction {
         response.put("proof", newBlock.get("proof"));
         response.put("previous_hash", newBlock.get("previous_hash"));
 
-        return response.toString();
+        return response;
 
     }
 
@@ -103,13 +105,61 @@ public class TestAction {
      */
     @RequestMapping("/chain")
     @ResponseBody
-    public  String  chain(){
+    public  Object  chain(){
         BlockChain blockChain = BlockChain.getInstance();
         Map<String, Object> response = new HashMap<String, Object>();
         response.put("chain", blockChain.getChain());
         response.put("length", blockChain.getChain().size());
-        return response.toString();
+        return response;
     }
+
+
+
+    /**
+     * 用于注册节点
+     * @return
+     */
+    @RequestMapping("/nodes/register")
+    @ResponseBody
+    public  Object  nodes_register(HttpServletRequest request) throws Exception{
+        //{"nodes":["http://localhost:1234"]}
+        //{"nodes":["http://localhost:12345"]}
+        // 获得节点集合数据，并进行判空
+        JSONArray nodes = JSONArray.parseArray(request.getParameter("nodes"));
+//        // 注册节点
+        BlockChain blockChain = BlockChain.getInstance();
+        for (int i=0;i<nodes.size();i++) {
+            blockChain.registerNode(nodes.get(i).toString());
+        }
+
+        // 向客户端返回处理结果
+        Map<String, Object> response = new HashMap<String, Object>();
+        response.put("message", "New nodes have been added");
+        response.put("total_nodes", JSONArray.toJSONString(blockChain.getNodes()));
+
+        return response;
+    }
+
+    /**
+     * 用于解决冲突
+     * @return
+     */
+    @RequestMapping("/nodes/resolve")
+    @ResponseBody
+    public  Object  nodes_resolve(HttpServletRequest request) throws Exception{
+        BlockChain blockChain = BlockChain.getInstance();
+        boolean replaced = blockChain.resolveConflicts();
+        Map<String, Object> response = new HashMap<String, Object>();
+        if (replaced) {
+            response.put("message", "Our chain was replaced");
+            response.put("new_chain", blockChain.getChain());
+        } else {
+            response.put("message", "Our chain is authoritative");
+            response.put("chain", blockChain.getChain());
+        }
+        return response;
+    }
+
 
 
 
