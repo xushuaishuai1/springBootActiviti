@@ -16,6 +16,7 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.*;
 import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,9 @@ import java.util.*;
 @Controller
 //@RequestMapping("/testAction")
 public class TestAction {
+
+    @Value("${server.port}")
+    private String port;
 
     @Autowired
     ProcessEngine processEngine;
@@ -76,7 +80,8 @@ public class TestAction {
         long proof = blockChain.proofOfWork(lastProof);
 
         // 给工作量证明的节点提供奖励，发送者为 "0" 表明是新挖出的币
-        blockChain.newTransactions("0", "13123", 1);
+
+        blockChain.newTransactions("0", port, 1);
 
         // 构建新的区块
         Map<String, Object> newBlock = blockChain.newBlock(proof, null);
